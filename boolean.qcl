@@ -1,0 +1,126 @@
+
+// *****************************************************************************
+//                              Boolean.qcl library
+//                  by Joao Paulo Schwarz Schuler 1999-2001
+//                              version 0.1.0
+//                    Web: http://www.schulers.com/jpss
+//                       E-mail: jpss@schulers.com
+//
+// The contents of this file are subject to the Mozilla Public License Version
+// 1.0; you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at http://www.mozilla.org/MPL/
+// Software distributed under the License is distributed on an "AS IS" basis,
+// WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+// for the specific language governing rights and limitations under the License.
+// *****************************************************************************
+
+include "qufunct.qcl";
+include "dft.qcl";
+
+// xor with a integer number n
+qufunct Ixor(int n,qureg q) {
+  set(n,q);
+}
+
+// if x=n then CPhase(pi,x)
+// see also query at gorver.qcl
+operator quPICPhase(qureg x,int n) {
+  int i;
+  for i=0 to #x-1 {     // x ->  (x = n)
+    if not bit(n,i) { Not(x[i]); }
+  }
+  CPhase(pi,x);            // Phase if x=1111..
+  for i=0 to #x-1 {     // x <- (x = n)
+    if not bit(n,i) { !Not(x[i]); }
+  }
+}
+
+
+//a <- a xor b
+qufunct quXor(qureg a,quconst b) {
+  int i;
+  for i=0 to #a-1 { CNot(a[i],b[i]); }
+}
+
+// a <- not ( a xor b )
+// compare 2 quantum registers
+// equal bits came to 1
+qufunct quEqual(qureg a,quconst b) {
+  quXor(a,b);
+  Not(a);
+}
+
+// if (a==b) { Not(f) };
+qufunct quTest(qureg f, qureg a,quconst b) {
+  quEqual(a,b);
+  CNot(f[0],a);
+  !quEqual(a,b);
+}
+
+
+// clear the contend of a quantum register
+procedure clear(qureg q) {
+  int x;
+  measure q,x;
+  Ixor(x,q);
+}
+
+// quantum AND: b and c => flip(a)
+qufunct quAnd(qureg a,quconst b, quconst c) {
+  int i;
+  for i=0 to #a-1 { CNot(a[i],b[i] & c[i]); }
+}
+
+// quantum NAND: b nand c => flip(a)
+qufunct quNand(qureg a,quconst b, quconst c) {
+  quAnd(a,b,c);
+  Not(a);
+}
+
+// quantum NOR: b nor c => flip(a)
+qufunct quNor(qureg a,qureg b, qureg c) {
+  Not(b);
+  Not(c);
+  quAnd(a,b,c);
+  !Not(b);
+  !Not(c);
+}
+
+// OR: b or c => flip(a)
+qufunct quOr(qureg a,qureg b, qureg c) {
+  quNor(a,b,c);
+  Not(a);
+}
+
+// memory[position] = data
+qufunct quSaveToMem(quconst position, quconst data, qureg memory, qureg addresses) {
+  quEqual(addresses,position);
+  cxor(data,memory,addresses);
+  !quEqual(addresses,position);
+}
+
+
+// quantum Vector AND: flip(a) <= ( b1 * b2 * b3 * b4 * ... *bn )
+qufunct quVectAnd(qureg a,quconst b) {
+  CNot(a,b);
+}
+
+// quantum Vector NAND: flip(a) <= not ( b1 * b2 * b3 * b4 * ... *bn )
+qufunct quVectNAnd(qureg a,quconst b) {
+  quVectAnd(a,b);
+  Not(a);
+}
+
+// quantum Vector NOR: flip(a) <= not ( b1 + b2 + b3 + b4 + ... +bn )
+qufunct quVectNOr(qureg a,qureg b) {
+  Not(b);
+  quVectAnd(a,b);
+  !Not(b);
+}
+
+// quantum Vector OR: flip(a) <= ( b1 + b2 + b3 + b4 + ... +bn )
+qufunct quVectOr(qureg a,qureg b) {
+  quVectNOr(a,b);
+  Not(a);
+}
+
