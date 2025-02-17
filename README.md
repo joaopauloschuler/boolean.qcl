@@ -1,4 +1,4 @@
-# boolean.qcl
+# Quantum Logic Operations and Graph Coloring
 Repository for the paper "Quantum Logic Operations and Graph Coloring". This 2001 paper represents a significant early contribution to practical quantum computing, demonstrating remarkable foresight in addressing the challenges of quantum programming.
 
 ## Abstract
